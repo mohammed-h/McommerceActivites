@@ -1,8 +1,10 @@
 package com.mexpedition.web.controller;
 
 
+import com.mexpedition.beans.CommandeBean;
 import com.mexpedition.dao.ExpeditionDao;
 import com.mexpedition.model.Expedition;
+import com.mexpedition.proxies.MicroserviceCommandeProxy;
 import com.mexpedition.web.exceptions.ExpeditionNotFoundException;
 import com.mexpedition.web.exceptions.ImpossibleAjouterExpeditionException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,8 +20,17 @@ public class ExpeditionController {
     @Autowired
     ExpeditionDao expeditionDao;
 
+    @Autowired
+    private MicroserviceCommandeProxy CommandesProxy;
+
     @PostMapping (value = "/expeditions")
     public ResponseEntity<Expedition> ajouterExpedition (@RequestBody Expedition expedition){
+
+        if(expedition == null) throw new ImpossibleAjouterExpeditionException("Impossible d'ajouter cette expédition");
+
+        CommandeBean commandeBean= CommandesProxy.recupererUneCommande(expedition.getIdCommande());
+
+        if(commandeBean == null) throw new ImpossibleAjouterExpeditionException("Impossible d'ajouter cette expédition, la commande spécifié n'existe pas");
 
         Expedition nouvelleExpedition = expeditionDao.save(expedition);
 
@@ -29,7 +40,7 @@ public class ExpeditionController {
     }
 
     @GetMapping(value = "/expeditions/{id}")
-    public Optional<Expedition> recupererUneExpedition(@PathVariable int id){
+    public Optional<Expedition> recupererExpedition(@PathVariable int id){
 
         Optional<Expedition> expedition = expeditionDao.findById(id);
 
